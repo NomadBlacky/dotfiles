@@ -1,0 +1,4 @@
+#! /bin/sh
+
+gnome-screensaver-command --lock
+pm-hibernate

@@ -1,0 +1,17 @@
+#!/usr/bin/ruby
+
+array = Array["foo", "hoge", "eee"]
+for var in array do
+  print("Color = " + var + "\n)
+end
+
+array = Array[10, 20, 30]
+sum = 0
+count = 0
+array.each {|num|
+  sum += num
+  print("[", count, "]: ", num)
+  count += 1
+}
+
+print("sum: ", sum)

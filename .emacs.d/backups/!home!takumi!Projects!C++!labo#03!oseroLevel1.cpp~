@@ -1,0 +1,316 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<time.h>
+
+//盤面の大きさ
+#define BOARDSIZE 8
+
+//状態を定義
+#define NONE 0
+#define BLACK 1
+#define WHITE 2
+
+
+//盤面
+char board[BOARDSIZE][BOARDSIZE];
+
+//向きごとの移動量
+int vec_y[] = {-1,-1,0,1,1,1,0,-1};
+int vec_x[] = {0,1,1,1,0,-1,-1,-1};
+char a ='S';
+char b ='w';
+char c ='d';
+char d ='T';
+char e ='n';
+char f ='b';
+char g ='M';
+char h ='D';
+//ひっくり返せるか確認
+int checkFlip(int y,int x,int turn,int vec){
+	int flag = 0;
+	while(1){
+		y += vec_y[vec];
+		x += vec_x[vec];
+
+		//盤面外はスルー
+		if(x < 0 || y <0 || x >BOARDSIZE -1 || y > BOARDSIZE -1) return 0;
+
+		if(board[y][x] == NONE) return 0;
+
+		//相手のコマがあるか
+		if(board[y][x] == (turn ? BLACK:WHITE)){
+			flag = 1;
+			continue;
+		}
+
+		//フラグが立っていればループ脱出
+		if(flag == 1)break;
+		return 0;
+	}
+	return 1;
+}
+//初期化関数
+void setBoard(void){
+	int i;
+	for(i = 0; i< BOARDSIZE*BOARDSIZE ; ++i){
+		board[i/BOARDSIZE][i%BOARDSIZE] = NONE;
+	}
+	board[BOARDSIZE/2 -1][BOARDSIZE/2] = BLACK; //[3][4]
+	board[BOARDSIZE/2][BOARDSIZE/2-1] = BLACK; //[4][3]
+	board[BOARDSIZE/2][BOARDSIZE/2] = WHITE; //[4][4]
+	board[BOARDSIZE/2-1][BOARDSIZE/2-1] = WHITE; //[3][3]
+}
+
+//盤面表示関数
+void disp(void){
+	int i,j;
+	printf(" ");
+	for(i = 0;i<BOARDSIZE;++i) printf("%2d",i+1);
+	printf("\n");
+
+	for(i=0;i<BOARDSIZE;++i){
+		printf("%d",(i+1)*10);
+		for(j=0;j<BOARDSIZE;++j){
+			switch(board[i][j]){
+				case NONE:
+					printf("・");
+					break;
+				case BLACK:
+					printf("○");
+					break;
+				case WHITE:
+					printf("●");
+					break;
+				default:
+					printf("er");
+					break;
+				}
+		}
+		printf("\n");
+	}
+}
+
+
+
+int check(int y,int x,int turn){
+	int vec;
+
+	//どれか１方向でもひっくり返るか確認する
+	for(vec = 0; vec < 8; ++vec){
+		if(checkFlip(y,x,turn,vec) == 1) return 1;
+	}
+	return 0;
+}
+
+void flip(int y,int x,int turn,int vec){
+	while(1){
+		y += vec_y[vec];
+		x += vec_x[vec];
+
+		//自分のコマがあったら終了
+		if(board[y][x] == (turn ? WHITE:BLACK)) break;
+
+		//それ以外なら自分のコマで塗りつぶす
+		board[y][x] = (turn ? WHITE:BLACK);
+	}
+
+}
+
+int put(int y,int x,int turn){
+	int vec,flag = 0;
+
+	//空白でなければ終了
+	if(board[y][x] != NONE ) return 0;
+
+	//全方向について確認
+	for(vec = 0;vec <8; ++vec){
+		if(checkFlip(y,x,turn,vec) == 1){
+			//裏返す
+			flip(y,x,turn,vec);
+			flag =1;
+		}
+	}
+	if(flag == 1){
+		//この場所にコマを置く
+		board[y][x] = (turn? WHITE:BLACK);
+		return 1;
+	}
+
+	return 0;
+}
+
+
+int input(int turn){
+	int place = 0;
+	int y,x; //あとで入力された値をxとyに振り分ける
+
+	while(1){
+		//入力する
+		printf("○>");
+		if(scanf("%d",&place) == 0){
+			//数値が取れなかったらバッファをクリアする
+			scanf("%*[^\n:]%*c");
+			printf("input error\n");
+			continue;
+		}
+
+		place = 34;
+
+		if(place == 99){
+			return 0;
+		}
+		//数値が範囲内か確認
+		if(place < 11 || place > 88){
+			printf("input[%d]:error\n",place);
+			place = 0;
+			continue;
+		}
+		y = place /10;
+		x = place %10;
+
+		//もう少し詳しく確認
+		if(x < 1 || y <1 || x > 8 || y >8){
+			printf("input[%d]:error\n",place);
+			place = 0;
+			continue;
+		}
+		
+		if(put(y-1,x-1,turn) == 1 )break;
+		else printf("input[%d]:error\n",place);
+		place = 0;
+	}
+}
+
+void ai_rand(int turn){
+	int place = 0,y,x;
+	while(1){
+		place = rand() % 89;
+
+		//数値が範囲内か確認
+		if(place < 11 || place > 88){
+			place = 0;
+			continue;
+		}
+		y = place/10;
+		x = place%10;
+		
+		if(x < 1 || y < 1 || x >8 || y > 8){
+			place = 0;
+			continue;
+		}
+		
+		if(put(y-1,x-1,turn) ==1){
+			printf(">%d\n",place);
+			break;
+		}
+		place = 0;
+	}
+}
+
+
+int checkEnd(int turn){
+	int i,j;
+	//置ける場所があるか確認する
+	for(i = 0; i<BOARDSIZE;++i){
+		for(j = 0;j<BOARDSIZE;++j){
+			//あれば続行
+			if(board[i][j] == NONE && check(i,j,turn) ==1) return 0;
+		}
+	}
+	//場所が無かったので交代して探す
+	turn = (turn +1) % 2;
+	for(i = 0; i<BOARDSIZE;++i){
+		for(j = 0;j<BOARDSIZE; ++j){
+			//あれば続行
+			if(board[i][j] == NONE && check(i,j,turn) == 1) return 1;
+		}
+	}
+
+	//なかったので終了
+	return 2;
+}
+
+void flag(){
+	printf("Congraturation! Next games password is...\n");
+	printf("[%c%c%c%c%c%c%c%c]\n",a,b,c,d,e,f,g,h);
+}
+
+
+void checkWinner(){
+	int i,j;
+	int b =0,w =0;
+
+	//コマを数え上げる
+	for(i =0;i < BOARDSIZE; ++i){
+		for(j = 0; j < BOARDSIZE; ++j){
+			switch(board[i][j]){
+			case BLACK:
+				++b;
+				break;
+			case WHITE:
+				++w;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	disp();
+
+	//勝者を表示
+	if(b > w) {
+		printf("○:Winner BLACK!\n");
+		flag();
+	}
+	else if(b < w) printf("●:Winner WHITE!\n");
+	else printf("Drawn game...");
+}
+
+
+
+int main(){
+	int turn =0,cpuPlace =0;	
+	setBoard();
+	//乱数の初期化
+	srand(time(NULL));
+	//メインループ
+	while(turn <2){
+		//このsystem関数は、コマンドプロンプトのコマンドを実行する.
+		//clsを使うことで、画面を占領して使う事が出来る。
+		system("cls");
+		printf("99:exitProgram\n");	
+		if(cpuPlace)printf("●>%d\n",cpuPlace);
+		disp();
+		//入力
+		switch(turn){
+			case 0:
+				if(input(turn) == 0)return 0;
+				break;
+			case 1:
+				ai_rand(turn);
+				break;
+			default:
+				printf("error\n");
+				return -1;
+		}
+
+		turn = (turn +1 ) %2;
+
+		//終了判定
+		switch(checkEnd(turn)){
+			case 1:
+				printf("pass\n");
+				turn = (turn +1)%2;
+				break;
+			case 2:
+				printf("game end\n");
+				turn = 2;
+				break;
+			default:
+				break;
+		}
+	}
+	checkWinner();
+	return 0;
+}
+

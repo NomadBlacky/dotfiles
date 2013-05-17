@@ -1,0 +1,22 @@
+#!/usr/bin/ruby
+# -*- coding: utf-8 -*-
+
+secretword = "foo"
+print "Your name?: "
+name = STDIN.gets
+name.chop!
+
+if name == "hoge"
+  print "hogeeeeeeeeeeeeeeeeee\n"
+else
+  print "Hello, #{name}!\n" #普通の挨拶
+  print "passwd: "
+  word = STDIN.gets
+  word.chop!
+  
+  while word != secretword
+    print "oh... passwd: "
+    word = STDIN.gets
+    word.chop!
+  end
+end
